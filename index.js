@@ -85,6 +85,9 @@ app.get('/text/*', (req, res, next) => {
     res.send('hello').status(200)
 })
 
+app.get('/list',(req, res, next) => {
+    res.send(JSON.stringify({statusList: linksClicked})).status(200)
+})
 
 
 app.get('/', (req, res) => {
