@@ -13,6 +13,12 @@ app.use(cors())
 
 const emailSent = []
 const linksClicked = []
+const employees = [
+    {id:'0a', email: 'a@cymulate.com'},
+    {id:'1b', email: 'b@cymulate.com'},
+    {id:'2c', email: 'c@cymulate.com'},
+    {id:'3d', email: 'd@cymulate.com'},
+]
 
 app.post('/authenticate', (req, res, next) => {
     const user = {
@@ -32,16 +38,12 @@ app.post('/send-email', (req, res, next) => {
 
 
     const id = req.body['userId']
-    const employees = [
-        {id:'0a', email: 'a@cymulate.com'},
-        {id:'1b', email: 'b@cymulate.com'},
-        {id:'2c', email: 'c@cymulate.com'},
-        {id:'3d', email: 'd@cymulate.com'},
-    ]
+
     if (id){
-        const employee = employees.filter(employee => employee.id === id)
-        sendEmail(employee.id,employee.email ).catch(console.error);
-        // sendEmail(employee.email)
+        const employee = employees.filter(employee => employee.id === id)[0]
+        if (employee){
+            sendEmail(employee.id,employee.email ).catch(console.error);
+        }
     }
     async function sendEmail(userId, userEmail) {
         let testAccount = await nodemailer.createTestAccount();
@@ -80,20 +82,16 @@ app.post('/send-email', (req, res, next) => {
     res.send('ok').status(200)
 })
 
-app.get('/text/*', (req, res, next) => {
-    linksClicked.push(req.originalUrl)
-    res.send('hello').status(200)
+app.get('/test/*', (req, res, next) => {
+    linksClicked.push({userId: req.originalUrl.split('/')[2]})
+    res.send('hello logged').status(200)
 })
 
 app.get('/list',(req, res, next) => {
+    // should do some join of the data to display status
     res.send(JSON.stringify({statusList: linksClicked})).status(200)
 })
 
-
-app.get('/', (req, res) => {
-    console.log('called')
-    res.send('Hello World!')
-})
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`)
