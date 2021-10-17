@@ -1,6 +1,7 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const nodemailer = require("nodemailer")
 
 const app = express()
 const port = 3000
@@ -8,6 +9,10 @@ const port = 3000
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(cors())
+
+
+const emailSent = []
+const linksClicked = []
 
 app.post('/authenticate', (req, res, next) => {
     const user = {
@@ -24,6 +29,8 @@ app.post('/authenticate', (req, res, next) => {
 })
 
 app.post('/send-email', (req, res, next) => {
+
+
     const id = req.body['userId']
     const employees = [
         {id:'0a', email: 'a@cymulate.com'},
@@ -33,14 +40,48 @@ app.post('/send-email', (req, res, next) => {
     ]
     if (id){
         const employee = employees.filter(employee => employee.id === id)
+        sendEmail(employee.id,employee.email ).catch(console.error);
         // sendEmail(employee.email)
     }
+    async function sendEmail(userId, userEmail) {
+        let testAccount = await nodemailer.createTestAccount();
+        let transporter = nodemailer.createTransport({
+            host: "smtp.ethereal.email",
+            port: 587,
+            secure: false,
+            auth: {
+                user: testAccount.user,
+                pass: testAccount.pass,
+            },
+        });
+
+        // send mail with defined transport object
+        const link = `<a href=localhost:3000/text/${userId}>A safe link</a>`
+
+            let info = await transporter.sendMail({
+            from: '"Fred Foo 👻" <foo@example.com>', // sender address
+            to: "buzzfoo@example.com",
+            subject: "Hello test email",
+            text: "Hello world?",
+            html: "" +
+                "<p>Please click</p>" +
+                link+
+                "<p>Have a great day!</p>",
+        });
+
+        console.log("Message sent: %s", info.messageId);
+        // should be logged in the db
+        emailSent.push({employeeId: userId, email:  userEmail, date: Date.now(), msgId: info.messageId})
+
+        // Preview only available when sending through an Ethereal account
+        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    }
+
     res.send('ok').status(200)
 })
 
 app.get('/text/*', (req, res, next) => {
-    console.log(req.originalUrl, ' clicked!!!')
-    console.log(req.params[0], 'Clicked!!!')
+    linksClicked.push(req.originalUrl)
     res.send('hello').status(200)
 })
 
